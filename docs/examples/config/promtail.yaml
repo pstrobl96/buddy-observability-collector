@@ -1,4 +1,5 @@
 server:
+  http_listen_address: 0.0.0.0
   http_listen_port: 9080
   grpc_listen_port: 0
 
@@ -10,14 +11,226 @@ clients:
 
 scrape_configs:
 
-#- job_name: syslog
-#  syslog:
-#    listen_address: localhost:8500
-#    idle_timeout: 120
-#    label_structured_data: true
-#    use_incoming_timestamp: true
-#    labels:
-#      job: "syslog"
+- job_name: syslog
+  syslog:
+    listen_address: 0.0.0.0:8500
+    listen_protocol: udp
+    idle_timeout: 120
+    label_structured_data: true
+    use_incoming_timestamp: false
+    labels:
+      job: "syslog-buddy"
+      board: "buddy"
+  pipeline_stages:
+  - match:
+      selector: '{ app="buddy" }'
+      stages:
+      # This regex stage extracts a new output by matching against some
+      # values and capturing the rest.
+      - regex:
+          expression: \b5VVoltage v=(?P<5vvoltage>\d+.\d+)\b
+      - regex:
+          expression: \b24VVoltage v=(?P<24vvoltage>\d+.\d+)\b
+      - regex:
+          expression: \bdwarf_mcu_temp v=(?P<dwarfmcutemp>\d+.\d+)\b
+      - regex:
+          expression: \bheap free=(?P<heapfree>\d+) total=(?P<heaptotal>\d+)\b
+      - regex:
+          expression: \bcpu_usage v=(?P<cpuusage>\d+)\b
+      - regex:
+          expression: \bpoints_dropped v=(?P<pointsdropped>\d+)\b
+      - regex:
+          expression: \bactive_extruder v=(?P<activeextruder>\d+)\b
+      - regex:
+          expression: \bsplitter_5V_current v=(?P<splitter5Vcurrent>\d+.\d+)\b
+      - regex:
+          expression: \bSandwitch5VCurrent v=(?P<sandwich5Vcurrent>\d+.\d+)\b
+      - regex:
+          expression: \bxlbuddy5VCurrent v=(?P<xlbuddy5Vcurrent>\d+.\d+)\b
+      - regex:
+          expression: \bfan,fan=print state=(?P<printfanstate>\d+.\d+),pwm=(?P<printfanpwm>\d+.\d+),measured=(?P<printfanmeasured>\d+.\d+) \b
+      - regex:
+          expression: \bfan,fan=heatbreak state=(?P<heatbreakfanstate>\d+.\d+),pwm=(?P<heatbreakfanpwm>\d+.\d+),measured=(?P<heatbreakfanmeasured>\d+.\d+) \b
+      - regex:
+          expression: \badj_z v=(?P<adjz>\d+.\d+)\b
+      - regex:
+          expression: \beth_out sent=(?P<ethoutsent>\d+)\b
+      - regex:
+          expression: \bis_printing sent=(?P<isprinting>\d+)\b
+      #- regex:
+      #    expression: \bfw_version v=(?P<fw>\d+)\b
+    # The metrics stage is going to increment a panic_total metric counter
+    # which Promtail exposes. The counter is only incremented when panic
+    # was extracted from the regex stage.
+      - metrics:
+          5v_voltage:
+            type: Gauge
+            max_idle_duration: 30s
+            description: "Current voltage value on the 5V"
+            prefix: "prusa_buddy_"
+            source: 5vvoltage
+            config:
+              action: set
+      - metrics:
+          24v_voltage:
+            type: Gauge
+            max_idle_duration: 30s
+            description: "Current voltage value on the 24V"
+            prefix: "prusa_buddy_"
+            source: 24vvoltage
+            config:
+              action: set
+      - metrics:
+          dwarf_mcu_temp:
+            type: Gauge
+            max_idle_duration: 30s
+            description: "Current temperature of dwarf MCU"
+            prefix: "prusa_buddy_"
+            source: dwarfmcutemp
+            config:
+              action: set
+      - metrics:
+          heap_free:
+            type: Gauge
+            max_idle_duration: 30s
+            description: "Amount of free heap"
+            prefix: "prusa_buddy_"
+            source: heapfree
+            config:
+              action: set
+      - metrics:
+          heap_total:
+            type: Gauge
+            max_idle_duration: 30s
+            description: "Amount of total heap"
+            prefix: "prusa_buddy_"
+            source: heaptotal
+            config:
+              action: set
+      - metrics:
+          cpu_usage:
+            type: Gauge
+            max_idle_duration: 30s
+            description: "Actual usage of CPU"
+            prefix: "prusa_buddy_"
+            source: cpuusage
+            config:
+              action: set
+      - metrics:
+          points_dropped:
+            type: Gauge
+            max_idle_duration: 30s
+            description: "How much points were dropped"
+            prefix: "prusa_buddy_"
+            source: cpuusage
+            config:
+              action: set
+      - metrics:
+          active_extruder:
+            type: Gauge
+            max_idle_duration: 30s
+            description: "Chosen extruder in use"
+            prefix: "prusa_buddy_"
+            source: activeextruder
+            config:
+              action: set
+      - metrics:
+          splitter_5V_current:
+            type: Gauge
+            max_idle_duration: 30s
+            description: "Current of 5V at splitter"
+            prefix: "prusa_buddy_"
+            source: splitter5Vcurrent
+            config:
+              action: set
+      - metrics:
+          sandwitch_5V_current:
+            type: Gauge
+            max_idle_duration: 30s
+            description: "Current of 5V at Sandwich"
+            prefix: "prusa_buddy_"
+            source: sandwich5Vcurrent
+            config:
+              action: set
+      - metrics:
+          xlbuddy_5V_current:
+            type: Gauge
+            max_idle_duration: 30s
+            description: "Current of 5V at xlBuddy"
+            prefix: "prusa_buddy_"
+            source: xlbuddy5Vcurrent
+            config:
+              action: set
+      - metrics:
+          print_fan_pwm:
+            type: Gauge
+            max_idle_duration: 30s
+            description: "Actual value of PWM for print fan"
+            prefix: "prusa_buddy_"
+            source: printfanpwm
+            config:
+              action: set
+      - metrics:
+          heatbreak_fan_pwm:
+            type: Gauge
+            max_idle_duration: 30s
+            description: "Actual value of PWM for heatbreak fan"
+            prefix: "prusa_buddy_"
+            source: heatbreakfanpwm
+            config:
+              action: set
+      - metrics:
+          heatbreak_fan_state:
+            type: Gauge
+            max_idle_duration: 30s
+            description: "Actual state of heatbreak fan"
+            prefix: "prusa_buddy_"
+            source: heatbreakfanstate
+            config:
+              action: set
+      - metrics:
+          pwm_fan_state:
+            type: Gauge
+            max_idle_duration: 30s
+            description: "Actual state of pwm fan"
+            prefix: "prusa_buddy_"
+            source: pwmfanstate
+            config:
+              action: set
+      - metrics:
+          adj_z:
+            type: Gauge
+            max_idle_duration: 30s
+            description: "Adjustment of Z"
+            prefix: "prusa_buddy_"
+            source: adjz
+            config:
+              action: set
+      - metrics:
+          eth_out_sent:
+            type: Gauge
+            max_idle_duration: 30s
+            description: "Number of packets sent trough ethernet"
+            prefix: "prusa_buddy_"
+            source: ethoutsent
+            config:
+              action: set
+      - metrics:
+          is_printing:
+            type: Gauge
+            max_idle_duration: 30s
+            description: "Information about if printer prints"
+            prefix: "prusa_buddy_"
+            source: isprinting
+            config:
+              action: set
+  relabel_configs:
+    - source_labels: ['__syslog_message_hostname']
+      target_label: 'mac_address'
+    - source_labels: ['__syslog_message_app_name']
+      target_label: 'app'
+    - source_labels: ['__syslog_connection_ip_address']
+      target_label: 'ip'
 
 - job_name: system
   static_configs:
