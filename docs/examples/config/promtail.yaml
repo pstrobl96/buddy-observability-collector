@@ -232,10 +232,10 @@ scrape_configs:
     - source_labels: ['__syslog_connection_ip_address']
       target_label: 'ip'
 
-- job_name: system
-  static_configs:
-  - targets:
-      - localhost
-    labels:
-      job: systemlogs
-      __path__: /var/log/*.log
+#- job_name: system
+#  static_configs:
+#  - targets:
+#      - localhost
+#    labels:
+#      job: systemlogs
+#      __path__: /var/log/*.log
