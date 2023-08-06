@@ -7,7 +7,7 @@ positions:
   filename: /tmp/positions.yaml
 
 clients:
-  - url: http://loki:3100/loki/api/v1/push
+  - url: url
 
 scrape_configs:
 
@@ -144,7 +144,7 @@ scrape_configs:
             config:
               action: set
       - metrics:
-          sandwitch_5V_current:
+          sandwich_5V_current:
             type: Gauge
             max_idle_duration: 30s
             description: "Current of 5V at Sandwich"

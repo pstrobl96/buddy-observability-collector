@@ -3,56 +3,56 @@ version: "3"
 networks:
   pubel:
 
-volumes:
-  prometheus_data:
-  grafana_data:
+#volumes:
+#  prometheus_data:
+#  grafana_data:
 
 services:
-  node-exporter:
-    image: prom/node-exporter:v1.6.1
-    container_name: node-exporter
-    restart: unless-stopped
-    volumes:
-      - /proc:/host/proc:ro
-      - /sys:/host/sys:ro
-      - /:/rootfs:ro
-    command:
-      - '--path.procfs=/host/proc'
-      - '--path.rootfs=/rootfs'
-      - '--path.sysfs=/host/sys'
-      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
-    ports:
-      - "9100:9100"
-    networks:
-      - pubel
+#  node-exporter:
+#    image: prom/node-exporter:v1.6.1
+#    container_name: node-exporter
+#    restart: unless-stopped
+#    volumes:
+#      - /proc:/host/proc:ro
+#      - /sys:/host/sys:ro
+#      - /:/rootfs:ro
+#    command:
+#      - '--path.procfs=/host/proc'
+#      - '--path.rootfs=/rootfs'
+#      - '--path.sysfs=/host/sys'
+#      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+#    ports:
+#      - "9100:9100"
+#    networks:
+#      - pubel
 
-  prometheus:
-    image: prom/prometheus:v2.37.9
-    restart: unless-stopped
-    volumes:
-      - ./docs/examples/config/prometheus.yml:/etc/prometheus/prometheus.yml
-      - prometheus_data:/prometheus
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
-      - '--web.console.libraries=/etc/prometheus/console_libraries'
-      - '--web.console.templates=/etc/prometheus/consoles'
-      - '--web.enable-lifecycle'
-      - '--storage.tsdb.retention.time=1d'
-    ports:
-      - "9090:9090"
-    networks:
-      - pubel
+#  prometheus:
+#    image: prom/prometheus:v2.37.9
+#    restart: unless-stopped
+#    volumes:
+#      - ./docs/examples/config/prometheus.yml:/etc/prometheus/prometheus.yml
+#      - prometheus_data:/prometheus
+#    command:
+#      - '--config.file=/etc/prometheus/prometheus.yml'
+#      - '--storage.tsdb.path=/prometheus'
+#      - '--web.console.libraries=/etc/prometheus/console_libraries'
+#      - '--web.console.templates=/etc/prometheus/consoles'
+#      - '--web.enable-lifecycle'
+#      - '--storage.tsdb.retention.time=1d'
+#    ports:
+#      - "9090:9090"
+#    networks:
+#      - pubel
 
-  loki:
-    image: grafana/loki:2.8.3
-    ports:
-      - "3100:3100"
-    volumes:
-      - ./docs/examples/config/loki.yaml:/etc/loki/local-config.yaml
-    command: -config.file=/etc/loki/local-config.yaml
-    networks:
-      - pubel
+#  loki:
+#    image: grafana/loki:2.8.3
+#    ports:
+#      - "3100:3100"
+#    volumes:
+#      - ./docs/examples/config/loki.yaml:/etc/loki/local-config.yaml
+#    command: -config.file=/etc/loki/local-config.yaml
+#    networks:
+#      - pubel
 
   promtail:
     image: grafana/promtail:2.8.3
@@ -81,16 +81,32 @@ services:
     networks:
       - pubel
 
-  grafana:
-    image: grafana/grafana:10.0.3
-    ports:
-      - "3000:3000"
-    user: "0"
+  agent:
+    image: grafana/agent:latest
     volumes:
-      - ./docs/examples/grafana/provisioning:/etc/grafana/provisioning
-      - grafana_data:/var/lib/grafana
-    environment:
-      - GF_INSTALL_PLUGINS=grafana-xyzchart-panel ## TODO
+      - ./docs/examples/config/agent.yaml:/etc/agent-config/agent.yaml
+    entrypoint:
+      - /bin/grafana-agent
+      - -server.http.address=0.0.0.0:12345
+      - -config.file=/etc/agent-config/agent.yaml
+      - -metrics.wal-directory=/tmp/agent/wal
+    ports:
+      - "12345:12345"
     networks:
       - pubel
+    depends_on:
+      - promtail
+      - buddy-exporter
 
+#  grafana:
+#    image: grafana/grafana:10.0.3
+#    ports:
+#      - "3000:3000"
+#    user: "0"
+#    volumes:
+#      - ./docs/examples/grafana/provisioning:/etc/grafana/provisioning
+#      - grafana_data:/var/lib/grafana
+#    environment:
+#      - GF_INSTALL_PLUGINS=grafana-xyzchart-panel ## TODO
+#    networks:
+#      - pubel
