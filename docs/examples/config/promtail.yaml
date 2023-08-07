@@ -57,6 +57,16 @@ scrape_configs:
           expression: \beth_out sent=(?P<ethoutsent>\d+)\b
       - regex:
           expression: \bis_printing sent=(?P<isprinting>\d+)\b
+      - regex:
+          expression: \bcurr_nozz v=(?P<nozzlecurrent>\d+.\d+)\b
+      - regex:
+          expression: \bvolt_nozz v=(?P<nozzlevoltage>\d+.\d+)\b
+      - regex:
+          expression: \bvolt_bed v=(?P<bedvoltage>\d+.\d+)\b
+      - regex:
+          expression: \bcur_mmu_imp v=(?P<mmucurrent>\d+.\d+)\b
+      - regex:
+          expression: \bcurr_inp v=(?P<inputcurrent>\d+.\d+)\b
       #- regex:
       #    expression: \bfw_version v=(?P<fw>\d+)\b
     # The metrics stage is going to increment a panic_total metric counter
@@ -222,6 +232,51 @@ scrape_configs:
             description: "Information about if printer prints"
             prefix: "prusa_buddy_"
             source: isprinting
+            config:
+              action: set
+      - metrics:
+          nozzle_current:
+            type: Gauge
+            max_idle_duration: 30s
+            description: "Current of nozzle"
+            prefix: "prusa_buddy_"
+            source: nozzlecurrent
+            config:
+              action: set
+      - metrics:
+          nozzle_voltage:
+            type: Gauge
+            max_idle_duration: 30s
+            description: "Voltage of nozzle"
+            prefix: "prusa_buddy_"
+            source: nozzlevoltage
+            config:
+              action: set
+      - metrics:
+          bed_voltage:
+            type: Gauge
+            max_idle_duration: 30s
+            description: "Voltage of bed"
+            prefix: "prusa_buddy_"
+            source: bedvoltage
+            config:
+              action: set
+      - metrics:
+          mmu_current:
+            type: Gauge
+            max_idle_duration: 30s
+            description: "Current of MMU"
+            prefix: "prusa_buddy_"
+            source: mmucurrent
+            config:
+              action: set
+      - metrics:
+          input_current:
+            type: Gauge
+            max_idle_duration: 30s
+            description: "Input current of printer"
+            prefix: "prusa_buddy_"
+            source: inputcurrent
             config:
               action: set
   relabel_configs:
