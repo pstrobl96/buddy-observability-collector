@@ -25,6 +25,8 @@ services:
       - "9100:9100"
     networks:
       - pubel
+    depends_on:
+      - buddy-exporter
 
 #  prometheus:
 #    image: prom/prometheus:v2.37.9
@@ -65,17 +67,15 @@ services:
     command: -config.file=/etc/promtail/config.yml
     networks:
       - pubel
+    depends_on:
+      - buddy-exporter
 
   buddy-exporter:
-    image: pubeldev/buddy-prometheus-exporter:v0.2.4
+    image: pubeldev/buddy-prometheus-exporter:v0.6.1
     environment:
-      - BUDDY_EXPORTER_PORT=10009
-      - BUDDY_EXPORTER_SCRAPE_TIMEOUT=1
-      #- BUDDY_EXPORTER_CONFIG=/etc/buddy-prometheus-exporter/buddy.yaml
+      - BUDDY_EXPORTER_CONFIG=/etc/buddy-prometheus-exporter/buddy.yaml
     volumes:
-      - type: bind
-        source: ./docs/examples/config/buddy.yaml
-        target: /app/buddy.yaml
+      - ./docs/examples/config/buddy.yaml:/etc/buddy-prometheus-exporter/buddy.yaml
     ports:
       - "10009:10009"
     networks:
